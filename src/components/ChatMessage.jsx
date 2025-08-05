@@ -33,7 +33,7 @@ const ChatMessage = ({ chat }) => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
+      pdf.save('itinerary.pdf');
       // 4. 导出 PDF 到 Blob
       const pdfBlob = pdf.output('blob');
 
