@@ -137,7 +137,7 @@ export default function TravelItineraryDisplay({ rawApiResponseText }) {
       {itineraryData && itineraryData.itinerary && (
         <>
           <h2 style={{ borderBottom: "2px solid #333", paddingBottom: 8 }}>
-            旅行计划详情
+            Travel Plan:
           </h2>
           <Itinerary itinerary={itineraryData.itinerary} />
         </>
