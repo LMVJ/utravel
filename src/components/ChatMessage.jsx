@@ -42,7 +42,7 @@ const ChatMessage = ({ chat }) => {
       formData.append('file', pdfBlob, 'itinerary.pdf');
 
       // 6. 上传文件
-      const resp = await fetch('https://file.io/?expires=1w', {
+      const resp = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
