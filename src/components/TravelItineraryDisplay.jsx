@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import jsPDF from 'jspdf';
 
 function decodeNewLines(str) {
   console.log('decodeNewLines input:', str);
@@ -117,6 +118,9 @@ function Itinerary({ itinerary }) {
  * @param {string} rawApiResponseText - 传入 API 返回的原始文本，包含普通文本和包裹在 ```json``` 的 JSON 字符串
  */
 export default function TravelItineraryDisplay({ rawApiResponseText }) {
+  const [uploadLink, setUploadLink] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { plainText, jsonStr } = useMemo(() => {
     if (!rawApiResponseText) return { plainText: '', jsonStr: null };
     const decoded = decodeNewLines(rawApiResponseText);
@@ -133,6 +137,86 @@ export default function TravelItineraryDisplay({ rawApiResponseText }) {
   } catch (e) {
     console.error('JSON parse error:', e);
   }
+  const handleGenerateAndUploadPDF = async () => {
+    setLoading(true);
+    setError(null);
+    setUploadLink(null);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 10;
+      const lineHeight = 7;
+      const maxLineWidth = pageWidth - margin * 2;
+
+      // 写普通文本
+      const plainLines = pdf.splitTextToSize(plainText, maxLineWidth);
+      let cursorY = margin;
+      plainLines.forEach((line) => {
+        if (cursorY + lineHeight > pageHeight - margin) {
+          pdf.addPage();
+          cursorY = margin;
+        }
+        pdf.text(line, margin, cursorY);
+        cursorY += lineHeight;
+      });
+
+      // 写行程 JSON
+      if (itineraryData && itineraryData.itinerary) {
+        pdf.addPage();
+        pdf.setFontSize(16);
+        pdf.text('Travel Plan:', margin, margin);
+        pdf.setFontSize(12);
+        cursorY = margin + 10;
+
+        Object.entries(itineraryData.itinerary).forEach(([date, day]) => {
+          if (cursorY + lineHeight * 2 > pageHeight - margin) {
+            pdf.addPage();
+            cursorY = margin;
+          }
+          pdf.text(`Date: ${date}`, margin, cursorY);
+          cursorY += lineHeight;
+
+          day.activities.forEach((act) => {
+            const actText = `- ${act.time} ${act.name}: ${act.description} Address: ${act.address} Budget: ${act.budget} Tips: ${act.notes}`;
+            const actLines = pdf.splitTextToSize(actText, maxLineWidth);
+            actLines.forEach((l) => {
+              if (cursorY + lineHeight > pageHeight - margin) {
+                pdf.addPage();
+                cursorY = margin;
+              }
+              pdf.text(l, margin + 5, cursorY);
+              cursorY += lineHeight;
+            });
+          });
+          cursorY += lineHeight / 2;
+        });
+      }
+
+      // 保存 PDF（可选）
+      pdf.save('itinerary.pdf');
+
+      // 上传到 /api/upload
+      const pdfBlob = pdf.output('blob');
+      const formData = new FormData();
+      formData.append('file', pdfBlob, 'itinerary.pdf');
+
+      const resp = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!resp.ok) throw new Error('Upload failed');
+
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.message || 'Upload failed');
+
+      setUploadLink(json.link);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -167,6 +251,37 @@ export default function TravelItineraryDisplay({ rawApiResponseText }) {
           </h2>
           <Itinerary itinerary={itineraryData.itinerary} />
         </>
+      )}
+      {/* 生成 PDF 按钮 */}
+      <button
+        onClick={handleGenerateAndUploadPDF}
+        disabled={loading}
+        style={{
+          marginTop: 20,
+          fontSize: 14,
+          padding: '6px 14px',
+          borderRadius: 5,
+          cursor: loading ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {loading ? 'Uploading...' : '📄 Generate PDF & Get Share Link'}
+      </button>
+
+      {/* 分享链接 */}
+      {uploadLink && (
+        <p style={{ marginTop: 12, color: 'green', fontSize: 14 }}>
+          Upload success:{' '}
+          <a href={uploadLink} target="_blank" rel="noreferrer">
+            {uploadLink}
+          </a>
+        </p>
+      )}
+
+      {/* 错误提示 */}
+      {error && (
+        <p style={{ marginTop: 12, color: 'red', fontSize: 14 }}>
+          Error: {error}
+        </p>
       )}
     </div>
   );
