@@ -1,56 +1,55 @@
-import fs from 'fs';
 import formidable from 'formidable';
 import fetch from 'node-fetch';
 
 export const config = {
   api: {
-    bodyParser: false, // 禁用内置body解析器
+    bodyParser: false,
   },
 };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const form = new formidable.IncomingForm();
+  const form = new formidable.IncomingForm({
+    fileWriteStreamHandler: () => null, // 不写入硬盘
+    keepExtensions: true,
+  });
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      res.status(500).json({ error: 'Form parsing error' });
-      return;
+      console.error('Form parse error:', err);
+      return res.status(500).json({ error: 'Form parse error' });
     }
 
     const file = files.file;
-    if (!file) {
-      res.status(400).json({ error: 'No file uploaded' });
-      return;
+    if (!file || !file[0]) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
     try {
-      const fileBuffer = fs.readFileSync(file.filepath);
+      const buffer = await file[0].toBuffer();
 
       const fileIoResponse = await fetch('https://file.io/?expires=1w', {
         method: 'POST',
-        body: fileBuffer,
+        body: buffer,
         headers: {
-          'Content-Type': file.mimetype || 'application/octet-stream',
+          'Content-Type': file[0].mimetype || 'application/octet-stream',
         },
       });
 
       const data = await fileIoResponse.json();
 
       if (!fileIoResponse.ok || !data.success) {
-        res
-          .status(500)
-          .json({ error: data.message || 'File.io upload failed' });
-        return;
+        console.error('Upload to file.io failed:', data);
+        return res.status(500).json({ error: 'Upload to file.io failed' });
       }
 
       res.status(200).json(data);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (e) {
+      console.error('Upload handler error:', e);
+      res.status(500).json({ error: e.message });
     }
   });
 }
