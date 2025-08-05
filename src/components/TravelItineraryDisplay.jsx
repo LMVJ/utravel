@@ -55,10 +55,15 @@ function fixEscapedJsonString(str) {
 }
 
 function Itinerary({ itinerary }) {
-  console.log('it: ', itinerary);
+  // 先把对象转成数组：[{date: '2025-10-01', activities: [...]}, ...]
+  const days = Object.entries(itinerary).map(([date, data]) => ({
+    date,
+    activities: data.activities,
+  }));
+
   return (
     <div style={{ marginTop: 16 }}>
-      {itinerary.map(({ date, activities }) => (
+      {days.map(({ date, activities }) => (
         <div
           key={date}
           style={{
