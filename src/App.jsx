@@ -64,10 +64,7 @@ const App = () => {
 
     try {
       if (!chatApiUrl) throw new Error('No session started yet.');
-      const response = await fetch(
-        `/api/forward?url=${encodeURIComponent(chatApiUrl)}`,
-        requestOptions
-      );
+      const response = await fetch(chatApiUrl, requestOptions);
       const data = await response.json();
       console.log(data);
       if (!response.ok)
@@ -128,14 +125,11 @@ const App = () => {
               import.meta.env.VITE_START_API_URL
             );
             // 1. 发送 "start" 请求唤醒 agent
-            const res = await fetch(
-              `/api/forward?url=${encodeURIComponent('http://8.211.147.14:8000/api/v1/sessions/start_session/')}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: 'start' }),
-              }
-            );
+            const res = await fetch(import.meta.env.VITE_START_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: 'start' }),
+            });
             console.log('Raw response:', res);
             if (!res.ok) throw new Error('Failed to start agent');
 
