@@ -57,9 +57,9 @@ Downloadable PDF
 ## 👥 Team Roster
 This project was developed by a collaborative team of five members, each taking responsibility for different components of the system:
 
-Hongrui ZhuL backend
+Hongrui Zhu is the designer and developer of the core travel planning agent and backend service. On the backend side, he implemented the logic that orchestrates the interaction between the user, the LLM-based itinerary planner, and external APIs. He also led the design and integration of the LangChain-based agent system, enabling dynamic follow-up questions and personalized trip generation based on user preferences. His work ensured that the AI assistant could reason effectively and generate coherent travel plans across multiple user sessions.
 
-Xiaotian Lin: backend
+Xiaotian Lin also worked on the backend, with a focus on database design and server-side infrastructure. He was responsible for defining and managing the SQLite schema used to store user sessions, chat messages, and travel plans. He implemented the Django REST Framework (DRF) API endpoints that enabled multi-turn interactions and persisted itinerary data. Additionally, he configured and deployed the cloud server, ensuring stable hosting and secure access to the uTravel platform. His work laid the foundation for scalable data management and reliable backend performance.
 
 Sirui Liu focused on the frontend, specifically building the user interface for AI-driven travel conversations. He designed and implemented the chat interaction flow between the user and the LLM agent, enabling users to naturally input their travel preferences, respond to follow-up questions, and receive personalized itineraries. His work prioritized usability and responsiveness across devices.
 
